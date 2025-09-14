@@ -12,6 +12,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/components/notification-provider";
 import Link from "next/link";
+import { Card } from "./ui/card";
+import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
   const {
@@ -61,13 +63,17 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger>
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative border-purple-500/30 text-purple-300 hover:bg-purple-500/10 bg-transparent"
+        <div
+          // variant="outline"
+          // size="sm"
+          className={cn(
+            " p-2 rounded-lg",
+            "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+            "relative border-purple-500/30 text-purple-300 hover:bg-purple-500/10 bg-transparent"
+          )}
         >
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 "
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -84,7 +90,7 @@ export function NotificationBell() {
               {unreadCount > 9 ? "9+" : unreadCount}
             </Badge>
           )}
-        </Button>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
