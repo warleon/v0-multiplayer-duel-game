@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,33 +12,34 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface AcceptDuelButtonProps {
-  duelId: string
-  betAmount: number
+  duelId: string;
+  betAmount: number;
 }
 
 export function AcceptDuelButton({ duelId, betAmount }: AcceptDuelButtonProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleAccept = async () => {
-    setIsLoading(true)
-    setError(null)
+    setIsLoading(true);
+    setError(null);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error("Not authenticated")
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
+      console.log("duel ID:", duelId);
       // Update the duel to accepted status and set opponent
-      const { error: updateError } = await supabase
+      const { error: updateError, statusText } = await supabase
         .from("duels")
         .update({
           opponent_id: user.id,
@@ -46,12 +47,19 @@ export function AcceptDuelButton({ duelId, betAmount }: AcceptDuelButtonProps) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", duelId)
-        .eq("status", "open") // Ensure it's still open
+        .eq("status", "open"); // Ensure it's still open
 
-      if (updateError) throw updateError
+      console.log("UPDATE ERROR:", updateError, "<", statusText, ">");
+      if (updateError) throw updateError;
 
-      // Create notification for the duel creator
-      const { data: duel } = await supabase.from("duels").select("creator_id").eq("id", duelId).single()
+      //// Create notification for the duel creator
+      const { data: duel } = await supabase
+        .from("duels")
+        .select()
+        .eq("id", duelId)
+        .single();
+
+      console.log("UPDATED DUEL:", duel);
 
       if (duel) {
         await supabase.from("notifications").insert({
@@ -60,28 +68,32 @@ export function AcceptDuelButton({ duelId, betAmount }: AcceptDuelButtonProps) {
           title: "Duel Accepted!",
           message: "Your duel challenge has been accepted. Prepare for battle!",
           data: { duel_id: duelId },
-        })
+        });
       }
 
-      setIsOpen(false)
-      router.refresh()
+      setIsOpen(false);
+      router.refresh();
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const potentialWinnings = Math.floor(betAmount * 0.8)
+  const potentialWinnings = Math.floor(betAmount * 0.8);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full bg-green-600 hover:bg-green-700 text-white">Accept Challenge</Button>
+        <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+          Accept Challenge
+        </Button>
       </DialogTrigger>
       <DialogContent className="bg-slate-800 border-purple-500/20">
         <DialogHeader>
-          <DialogTitle className="text-white">Accept Duel Challenge</DialogTitle>
+          <DialogTitle className="text-white">
+            Accept Duel Challenge
+          </DialogTitle>
           <DialogDescription className="text-purple-200">
             Are you ready to enter battle? Review the terms below.
           </DialogDescription>
@@ -97,24 +109,33 @@ export function AcceptDuelButton({ duelId, betAmount }: AcceptDuelButtonProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-purple-200">Potential winnings:</span>
-                <span className="text-green-400 font-bold">{potentialWinnings} coins</span>
+                <span className="text-green-400 font-bold">
+                  {potentialWinnings} coins
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-purple-200">If you lose:</span>
-                <span className="text-red-400 font-bold">-{betAmount} coins</span>
+                <span className="text-red-400 font-bold">
+                  -{betAmount} coins
+                </span>
               </div>
             </div>
           </div>
 
           <div className="p-4 bg-yellow-900/20 rounded-lg border border-yellow-500/30">
             <p className="text-yellow-200 text-sm">
-              <strong>Warning:</strong> By accepting this duel, you agree to risk {betAmount} coins. The battle will be
-              turn-based combat until one warrior is defeated.
+              <strong>Warning:</strong> By accepting this duel, you agree to
+              risk {betAmount} coins. The battle will be turn-based combat until
+              one warrior is defeated.
             </p>
           </div>
         </div>
 
-        {error && <p className="text-red-400 text-sm bg-red-900/20 p-3 rounded border border-red-500/30">{error}</p>}
+        {error && (
+          <p className="text-red-400 text-sm bg-red-900/20 p-3 rounded border border-red-500/30">
+            {error}
+          </p>
+        )}
 
         <DialogFooter>
           <Button
@@ -124,11 +145,15 @@ export function AcceptDuelButton({ duelId, betAmount }: AcceptDuelButtonProps) {
           >
             Cancel
           </Button>
-          <Button onClick={handleAccept} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
+          <Button
+            onClick={handleAccept}
+            disabled={isLoading}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
             {isLoading ? "Accepting..." : "Accept & Enter Battle"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

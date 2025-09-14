@@ -1,50 +1,62 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { BattleArena } from "@/components/battle-arena"
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { BattleArena } from "@/components/battle-arena";
 
 interface BattlePageProps {
-  params: Promise<{ duelId: string }>
+  params: { duelId: string };
 }
 
-export default async function BattlePage({ params }: BattlePageProps) {
-  const { duelId } = await params
-  const supabase = await createClient()
+export default async function BattlePage(context: BattlePageProps) {
+  console.log("params:", context.params);
+  const { duelId } = context.params;
+  const supabase = await createClient();
 
   const {
     data: { user },
     error,
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
   if (error || !user) {
-    redirect("/auth/login")
+    redirect("/auth/login");
   }
 
   // Get duel information
   const { data: duel } = await supabase
     .from("duels")
-    .select(`
+    .select(
+      `
       *,
       creator:creator_id(id, username, display_name, wins, losses),
       opponent:opponent_id(id, username, display_name, wins, losses)
-    `)
+    `
+    )
     .eq("id", duelId)
-    .single()
+    .single();
+
+  console.log("duel:", duel);
 
   if (!duel) {
-    redirect("/duels")
+    redirect("/duels");
   }
 
   // Check if user is participant
   if (duel.creator_id !== user.id && duel.opponent_id !== user.id) {
-    redirect("/duels")
+    redirect("/duels");
   }
 
   // Check if duel is ready for battle
-  if (duel.status !== "accepted" && duel.status !== "in_progress") {
-    redirect("/duels")
+  if (
+    duel.status !== "accepted"
+    // && duel.status !== "in_progress"
+  ) {
+    redirect("/duels");
   }
 
   // Get or create battle state
-  let { data: battleState } = await supabase.from("battle_states").select("*").eq("duel_id", duelId).single()
+  let { data: battleState } = await supabase
+    .from("battle_states")
+    .select("*")
+    .eq("duel_id", duelId)
+    .single();
 
   // If no battle state exists and duel is accepted, create one
   if (!battleState && duel.status === "accepted") {
@@ -60,25 +72,33 @@ export default async function BattlePage({ params }: BattlePageProps) {
         battle_log: [],
       })
       .select()
-      .single()
+      .single();
 
+    console.log("battle error:", battleError);
     if (battleError) {
-      redirect("/duels")
+      redirect("/duels");
     }
 
-    battleState = newBattleState
+    battleState = newBattleState;
 
     // Update duel status to in_progress
-    await supabase.from("duels").update({ status: "in_progress" }).eq("id", duelId)
+    await supabase
+      .from("duels")
+      .update({ status: "in_progress" })
+      .eq("id", duelId);
   }
 
   if (!battleState) {
-    redirect("/duels")
+    redirect("/duels");
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <BattleArena duel={duel} battleState={battleState} currentUserId={user.id} />
+      <BattleArena
+        duel={duel}
+        battleState={battleState}
+        currentUserId={user.id}
+      />
     </div>
-  )
+  );
 }
