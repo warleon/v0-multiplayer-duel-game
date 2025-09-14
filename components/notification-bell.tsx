@@ -12,7 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useNotifications } from "@/components/notification-provider";
 import Link from "next/link";
-import { Card } from "./ui/card";
 import { cn } from "@/lib/utils";
 
 export function NotificationBell() {
@@ -64,8 +63,6 @@ export function NotificationBell() {
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger>
         <div
-          // variant="outline"
-          // size="sm"
           className={cn(
             " p-2 rounded-lg",
             "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
