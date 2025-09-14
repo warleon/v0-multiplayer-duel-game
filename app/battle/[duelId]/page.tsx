@@ -44,10 +44,7 @@ export default async function BattlePage(context: BattlePageProps) {
   }
 
   // Check if duel is ready for battle
-  if (
-    duel.status !== "accepted"
-    // && duel.status !== "in_progress"
-  ) {
+  if (duel.status !== "accepted" && duel.status !== "in_progress") {
     redirect("/duels");
   }
 
